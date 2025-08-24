@@ -8,6 +8,7 @@ import java.util.Scanner;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -30,9 +31,16 @@ public class JWKSUtil {
             CONFIG_FILE_NAME);
     private static final Map<String, String> propertyCache = new ConcurrentHashMap<>();
 
-    public static JSONArray getOBbieJwksEndpointDetails() throws IOException {
-
-        URL url = new URL(getPropertyFromFile("DCR_JWKS_REG_ENDPOINT"));
+    public static JSONArray getOBbieJwksEndpointDetails() {
+    JSONArray keys = null;
+    try {
+        String endpoint = getPropertyFromFile("DCR_JWKS_REG_ENDPOINT");
+        log.info("DCR_JWKS_REG_ENDPOINT: " + endpoint);
+        if (StringUtils.isEmpty(endpoint)) {
+            log.error("DCR_JWKS_REG_ENDPOINT property is null.");
+            return null;
+        }
+        URL url = new URL(endpoint);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod(GET);
 
@@ -40,28 +48,30 @@ public class JWKSUtil {
         StringBuffer content = new StringBuffer();
 
         if (HttpsURLConnection.HTTP_OK == status) {
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                content.append(inputLine);
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    content.append(inputLine);
+                }
             }
-            in.close();
-            if(log.isDebugEnabled()){
-                log.debug("JWKS Endpoint output" +content);
+            if (log.isDebugEnabled()) {
+                log.debug("JWKS Endpoint output: " + content);
             }
             JSONObject object = new JSONObject(content.toString());
             if (object.has("keys")) {
-                return object.getJSONArray("keys");
-            } else {
-                //could not find keys
-                return null;
+                keys = object.getJSONArray("keys");
             }
         } else {
-            //could not get response
-            return null;
+            log.error("Failed to fetch JWKS. HTTP status: " + status);
         }
+    } catch (IOException e) {
+        log.error("I/O error while connecting to JWKS endpoint", e);
+        return null;
+    } catch (Exception e) {
+        log.error("Unexpected error occurred", e);
     }
+    return keys;
+}
 
     public static JSONArray getBankCerts() {
         String carbonHome = System.getProperty(CARBON_HOME_NAME);

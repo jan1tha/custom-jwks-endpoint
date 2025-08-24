@@ -46,6 +46,12 @@ public class JWKSService {
         JSONArray allCerts;
         try {
             allCerts = JWKSUtil.getOBbieJwksEndpointDetails();
+            if(allCerts!= null) {
+                log.info("Retrieved JWKS from Remote endpoint.");
+            } else {
+                log.warn("No JWKS keys found in Remote endpoint response.");
+                allCerts = new JSONArray();
+            }
             for (int i = 0; i < JWKSUtil.getBankCerts().length(); i++) {
                 allCerts.put(JWKSUtil.getBankCerts().get(i));
             }
