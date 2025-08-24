@@ -330,8 +330,16 @@ src/
 ### Logging
 
 The service uses SLF4J for logging. Enable debug logging to see detailed request/response information:
+You can configure logging from WSO2 <IAM-HOME>/repository/conf/log4j2.properties
 ```bash
--Dorg.slf4j.simpleLogger.defaultLogLevel=debug
+logger.jwks-util.name=com.wso2.ob.webapp.utility.services
+logger.jwks-util.level=DEBUG
+```
+
+then append add the `jwks-util` to loggers
+
+```bash
+loggers = <ALL LOGGERS>, jwks-util
 ```
 
 ## Security Considerations
@@ -349,10 +357,6 @@ The service uses SLF4J for logging. Enable debug logging to see detailed request
 3. Make your changes
 4. Add tests if applicable
 5. Submit a pull request
-
-## License
-
-This project is licensed under the WSO2 Commercial License. See the license headers in source files for details.
 
 ## Support
 
